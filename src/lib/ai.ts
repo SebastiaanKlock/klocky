@@ -2,7 +2,8 @@ import { supabase } from '../backend';
 import type { FieldKey, Mapping, Product } from '../types';
 import { FIELD_ORDER, type Grid } from './detect';
 
-export const aiAvailable = !!supabase;
+// AI is off: it needs a paid Anthropic key. Set VITE_AI_ENABLED=true and deploy supabase/functions/ai to enable it.
+export const aiAvailable = !!supabase && import.meta.env.VITE_AI_ENABLED === 'true';
 
 async function call<T>(body: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error('AI werkt alleen met de gedeelde server (inloggen).');
