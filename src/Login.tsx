@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { supabase } from './backend';
+import { LogoMark } from './Logo';
 
 type Mode = 'in' | 'new' | 'join';
 export const PENDING_KEY = 'prijsvergelijker.pending';
@@ -49,8 +50,8 @@ export default function Login() {
   return (
     <div className="login">
       <div className="welcome">
-        <div className="brand big"><i>€</i></div>
-        <div className="wordmark">Klocky</div>
+        <div className="brand big"><LogoMark size={72} /></div>
+        <div className="wordmark">KLOCKY</div>
         <h1>{c.title}</h1>
         <p className="lead">{c.sub}</p>
 
