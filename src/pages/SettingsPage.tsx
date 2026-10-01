@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useData } from '../ctx';
 import type { Settings } from '../types';
+import OrgCard from './OrgCard';
 
 export default function SettingsPage() {
   const { settings, store, mode } = useData();
@@ -29,6 +30,7 @@ export default function SettingsPage() {
 
   return (
     <div>
+      {mode === 'shared' && <OrgCard />}
       <div className="card">
         <h2>Uw bedrijfsgegevens (op de factuur)</h2>
         <div className="mapgrid">

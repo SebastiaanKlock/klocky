@@ -54,14 +54,14 @@ export const supabase: SupabaseClient | null = sharedConfigured
   ? createClient(URL_!, KEY_!, { auth: { persistSession: true, autoRefreshToken: true } })
   : null;
 
-function sharedBackend(sb: SupabaseClient): Backend {
+function sharedBackend(sb: SupabaseClient, orgId: string): Backend {
   const PAGE = 100;
   return {
     mode: 'shared',
     async loadAll(onProgress) {
       const out: Doc[] = [];
       for (let from = 0; ; from += PAGE) {
-        const { data, error } = await sb.from('docs').select('kind,id,data').order('kind').order('id').range(from, from + PAGE - 1);
+        const { data, error } = await sb.from('docs').select('kind,id,data').eq('org_id', orgId).order('kind').order('id').range(from, from + PAGE - 1);
         if (error) throw error;
         out.push(...(data as Doc[]));
         onProgress?.(out.length);
@@ -70,27 +70,28 @@ function sharedBackend(sb: SupabaseClient): Backend {
       return out;
     },
     async fetchOne(kind, id) {
-      const { data, error } = await sb.from('docs').select('kind,id,data').eq('kind', kind).eq('id', id).maybeSingle();
+      const { data, error } = await sb.from('docs').select('kind,id,data').eq('org_id', orgId).eq('kind', kind).eq('id', id).maybeSingle();
       if (error) throw error;
       return (data as Doc) ?? null;
     },
     async put(kind, id, data) {
-      const { error } = await sb.from('docs').upsert({ kind, id, data, updated_at: new Date().toISOString() });
+      const { error } = await sb.from('docs').upsert({ org_id: orgId, kind, id, data, updated_at: new Date().toISOString() }, { onConflict: 'org_id,kind,id' });
       if (error) throw error;
     },
     async remove(kind, id) {
-      const { error } = await sb.from('docs').delete().eq('kind', kind).eq('id', id);
+      const { error } = await sb.from('docs').delete().eq('org_id', orgId).eq('kind', kind).eq('id', id);
       if (error) throw error;
     },
     async clearAll() {
-      const { error } = await sb.from('docs').delete().neq('id', '');
+      const { error } = await sb.from('docs').delete().eq('org_id', orgId);
       if (error) throw error;
     },
     subscribe(cb) {
       const ch = sb
-        .channel('docs-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'docs' }, (p) => {
-          const row = (p.new && 'id' in p.new ? p.new : p.old) as { kind?: Kind; id?: string };
+        .channel('docs-' + orgId)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'docs', filter: 'org_id=eq.' + orgId }, (p) => {
+          const row = (p.new && 'id' in p.new ? p.new : p.old) as { org_id?: string; kind?: Kind; id?: string };
+          if (row?.org_id && row.org_id !== orgId) return;
           if (row?.kind && row?.id) cb(row.kind, row.id);
         })
         .subscribe();
@@ -99,8 +100,8 @@ function sharedBackend(sb: SupabaseClient): Backend {
   };
 }
 
-export function createBackend(): Backend {
-  return supabase ? sharedBackend(supabase) : localBackend();
+export function createBackend(orgId?: string): Backend {
+  return supabase && orgId ? sharedBackend(supabase, orgId) : localBackend();
 }
 
 export type { Session };
