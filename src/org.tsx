@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type FormEvent } from 'react';
 import { supabase } from './backend';
+import { PENDING_KEY } from './Login';
 
 export interface Org {
   id: string;
@@ -59,7 +60,23 @@ export function OrgGate({ children, userEmail }: { children: (orgId: string) => 
   });
 
   const reload = useCallback(async () => {
-    try { setOrgs(await fetchOrgs()); setError(''); } catch (e) { setError((e as Error).message); setOrgs([]); }
+    try {
+      let list = await fetchOrgs();
+      // finish what was chosen on the welcome screen (create / join), now that we are logged in
+      if (list.length === 0) {
+        let pending: { type?: string; value?: string } | null = null;
+        try { pending = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+        if (pending?.value) {
+          try {
+            const id = await rpc<string>(pending.type === 'join' ? 'join_org' : 'create_org', pending.type === 'join' ? { p_code: pending.value } : { p_name: pending.value });
+            try { localStorage.setItem(KEY, id); } catch { /* ignore */ }
+            list = await fetchOrgs();
+          } catch (e) { setError((e as Error).message); }
+        }
+      }
+      setOrgs(list);
+      if (list.length) setError('');
+    } catch (e) { setError((e as Error).message); setOrgs([]); }
   }, []);
   useEffect(() => { reload(); }, [reload]);
 
