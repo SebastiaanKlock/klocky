@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: { maximumFileSizeToCacheInBytes: 5_000_000 },
       manifest: {
-        name: 'Prijsvergelijker',
-        short_name: 'Prijzen',
+        name: 'Klocky',
+        short_name: 'Klocky',
         description: 'Prijslijsten vergelijken en facturen maken',
         lang: 'nl',
         display: 'standalone',

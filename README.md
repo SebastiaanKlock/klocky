@@ -1,4 +1,4 @@
-# Prijsvergelijker
+# Klocky
 
 Prijslijsten van leveranciers inladen, vergelijken en facturen maken.
 

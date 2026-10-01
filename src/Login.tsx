@@ -50,6 +50,7 @@ export default function Login() {
     <div className="login">
       <div className="welcome">
         <div className="brand big"><i>€</i></div>
+        <div className="wordmark">Klocky</div>
         <h1>{c.title}</h1>
         <p className="lead">{c.sub}</p>
 

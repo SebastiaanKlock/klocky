@@ -61,7 +61,7 @@ export default function App({ userEmail }: { userEmail: string | null }) {
   return (
     <div className="app">
       <header className="top no-print">
-        <div className="brand"><i>€</i>{o ? o.org.name : 'Prijsvergelijker'}
+        <div className="brand"><i>€</i>Klocky{o && <span className="orgname">{o.org.name}</span>}
           {o && o.orgs.length > 1 && (
             <select className="orgsel" value={o.org.id} onChange={(e) => o.switchOrg(e.target.value)}>
               {o.orgs.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
