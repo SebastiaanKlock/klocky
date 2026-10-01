@@ -5,6 +5,7 @@ import { detect, detectMapping, FIELD_LABELS, FIELD_ORDER, signature, type Grid 
 import { parseGrid } from '../lib/importer';
 import { eur, fmtVol } from '../lib/text';
 import { toast } from '../lib/toast';
+import { aiAvailable, aiDetectMapping } from '../lib/ai';
 import type { FieldKey, Mapping, Supplier } from '../types';
 
 const colLetter = (i: number) => {
@@ -45,6 +46,11 @@ export default function Suppliers() {
     }
   }
 
+  async function clearList(s: Supplier) {
+    if (!confirm(`De prijslijst van "${s.name}" verwijderen? De leverancier blijft bestaan.`)) return;
+    try { await store.clearPricelist(s.id!); toast('Prijslijst verwijderd'); } catch (e) { toast('Verwijderen mislukt: ' + (e as Error).message); }
+  }
+
   async function removeSupplier(s: Supplier) {
     if (!confirm(`"${s.name}" en alle bijbehorende producten verwijderen?`)) return;
     try { await store.deleteSupplier(s.id!); } catch (e) { toast('Verwijderen mislukt: ' + (e as Error).message); }
@@ -80,7 +86,8 @@ export default function Suppliers() {
                     <input type="file" hidden accept=".xlsx,.xls,.csv,.xlsm"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f, s.id!); e.target.value = ''; }} />
                   </label>{' '}
-                  <button className="danger" onClick={() => removeSupplier(s)}>Verwijderen</button>
+                  <button className="danger" disabled={!(counts.get(s.id!) ?? 0)} onClick={() => clearList(s)}>Prijslijst verwijderen</button>{' '}
+                  <button className="danger" onClick={() => removeSupplier(s)}>Leverancier verwijderen</button>
                 </td>
               </tr>
             ))}
@@ -155,6 +162,22 @@ function ImportWizard({ loaded, initialTarget, onClose }: { loaded: Loaded; init
   };
 
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState('');
+
+  async function runAi() {
+    setAiBusy(true);
+    setAiNote('');
+    try {
+      const r = await aiDetectMapping(grid);
+      setOverride({ sheet: sheetIdx, headerRow: r.headerRow, mapping: r.mapping });
+      setAiNote(r.note || 'De AI heeft de kolommen herkend.');
+    } catch (e) {
+      setAiNote('AI-herkenning mislukt: ' + (e as Error).message);
+    } finally {
+      setAiBusy(false);
+    }
+  }
   const canImport = result.products.length > 0 && (target !== 'new' || newName.trim());
 
   async function doImport() {
@@ -210,6 +233,12 @@ function ImportWizard({ loaded, initialTarget, onClose }: { loaded: Loaded; init
           </label>
         </div>
 
+        {aiAvailable && (
+          <div className="row">
+            <button onClick={runAi} disabled={aiBusy}>{aiBusy ? 'AI is aan het lezen…' : '✨ Laat AI de kolommen herkennen'}</button>
+            {aiNote && <span className="muted small">{aiNote}</span>}
+          </div>
+        )}
         {saved && !active && <p className="ok">Eerder opgeslagen kolomindeling van deze leverancier wordt gebruikt.</p>}
 
         <h3>Kolommen (automatisch herkend — pas aan waar nodig)</h3>
@@ -226,7 +255,7 @@ function ImportWizard({ loaded, initialTarget, onClose }: { loaded: Loaded; init
             </label>
           ))}
         </div>
-        {missingPrice && <p className="err">Kies minstens een prijskolom (per fles of per doos).</p>}
+        {missingPrice && <p className="err">Kies minstens een prijskolom (per fles of per doos){aiAvailable ? ' of laat de AI het proberen' : ''}.</p>}
 
         <h3>Voorbeeld — {result.products.length.toLocaleString('nl-NL')} producten herkend{result.skipped ? `, ${result.skipped} regels overgeslagen (geen prijs/omschrijving)` : ''}</h3>
         <div className="scroll">

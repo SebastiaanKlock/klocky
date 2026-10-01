@@ -1,6 +1,7 @@
 import type { Backend, Doc, Kind } from './backend';
 import type { Customer, Invoice, Product, Settings, Supplier } from './types';
 import { normText } from './lib/text';
+import { classifyDrink } from './lib/categories';
 
 export const DEFAULT_SETTINGS: Settings = {
   company: '',
@@ -22,7 +23,7 @@ export const uid = () =>
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 /** Price lists are stored without derived fields to keep the documents small. */
-type StoredProduct = Omit<Product, 'supplierId' | 'search'>;
+type StoredProduct = Omit<Product, 'supplierId' | 'search' | 'drink'>;
 
 export interface State {
   ready: boolean;
@@ -37,9 +38,10 @@ export interface State {
 const withSearch = (supplierId: string, p: StoredProduct): Product => ({
   ...p,
   supplierId,
+  drink: classifyDrink(p.category, p.description),
   search: normText(`${p.description} ${p.extra} ${p.category} ${p.sku} ${p.ean}`),
 });
-const strip = ({ supplierId: _s, search: _q, ...rest }: Product): StoredProduct => rest;
+const strip = ({ supplierId: _s, search: _q, drink: _d, ...rest }: Product): StoredProduct => rest;
 
 export class Store {
   state: State = { ready: false, error: '', suppliers: [], products: [], customers: [], invoices: [], settings: DEFAULT_SETTINGS };
@@ -152,14 +154,21 @@ export class Store {
     await this.erase('suppliers', id);
   }
 
+  /** Remove the price list (products) of a supplier but keep the supplier itself. */
+  async clearPricelist(supplierId: string) {
+    await this.erase('pricelists', supplierId);
+    const s = this.suppliers.get(supplierId);
+    if (s) { const { id: _i, lastImport: _l, ...rest } = s; await this.write('suppliers', supplierId, rest); }
+  }
+
   /** Replace a supplier's imported list; manually added products survive. */
-  async replacePricelist(supplierId: string, imported: Omit<Product, 'supplierId'>[]) {
+  async replacePricelist(supplierId: string, imported: Omit<Product, 'supplierId' | 'drink'>[]) {
     const manual = (this.lists.get(supplierId) ?? []).filter((p) => p.manual);
     const fresh: StoredProduct[] = imported.map(({ search: _s, ...p }) => ({ ...p, id: uid() }));
     await this.write('pricelists', supplierId, [...fresh, ...manual.map(strip)]);
   }
 
-  async addManualProduct(p: Omit<Product, 'id' | 'search'>) {
+  async addManualProduct(p: Omit<Product, 'id' | 'search' | 'drink'>) {
     const cur = (this.lists.get(p.supplierId) ?? []).map(strip);
     const { supplierId: _s, ...rest } = p;
     await this.write('pricelists', p.supplierId, [...cur, { ...rest, id: uid(), manual: true }]);

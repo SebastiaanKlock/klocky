@@ -178,3 +178,27 @@ td input:not(.num):not([type=checkbox]) { width: 100%; }
 .brand.big { justify-content: center; } .brand.big i { width: 64px; height: 64px; border-radius: 16px; font-size: 34px; line-height: 64px; }
 .banner { background: var(--warn-soft); padding: 10px 20px; text-align: center; font-weight: 500; }
 .right { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- compare ---------- */
+.scroll.big { max-height: none; overflow-x: auto; box-shadow: var(--shadow); border-radius: var(--radius); }
+.scroll.big th, .scroll.big td { white-space: nowrap; } .scroll.big td:first-child { white-space: normal; min-width: 260px; }
+.best-cell { background: var(--good-soft); color: var(--good); }
+.mini { padding: 0 7px; margin-left: 6px; font-size: 12px; opacity: .5; } tr:hover .mini { opacity: 1; }
+.winrow { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.win { background: var(--fill); border-radius: 14px; padding: 10px 16px; min-width: 120px; text-align: center; } .win b { font-size: 22px; display: block; }
+.card.ai { border: 1px solid var(--accent); }
+
+/* ---------- invoices ---------- */
+.segmented { display: inline-flex; background: var(--fill); border-radius: 999px; padding: 3px; gap: 2px; }
+.segmented button { background: transparent; border-radius: 999px; padding: 5px 16px; color: var(--muted); }
+.segmented button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.segmented button.on.verzonden { color: #b36b00; } .segmented button.on.betaald { color: var(--good); }
+select.status { padding: 3px 28px 3px 12px; border-radius: 999px; font-weight: 600; font-size: 12px; background-color: var(--fill); }
+select.status.verzonden { background-color: var(--warn-soft); color: #b36b00; } select.status.betaald { background-color: var(--good-soft); color: var(--good); }
+.win.clickable { border: 0; cursor: pointer; } .win.clickable.on { outline: 2px solid var(--accent); }
+.calc { max-width: 420px; margin-left: auto; } .calc div { display: flex; justify-content: space-between; padding: 4px 0; }
+.calc .grand { border-top: 2px solid var(--ink); font-weight: 700; font-size: 16px; margin-top: 6px; padding-top: 8px; }
+.nowrap { white-space: nowrap; }
+input.manual { border-color: var(--accent); background: var(--accent-soft); }
+label.check { flex-direction: row !important; align-items: center; gap: 8px !important; }
+label.check input { width: auto; }

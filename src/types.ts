@@ -31,6 +31,8 @@ export interface Product {
   ean: string;
   eanCase: string;
   manual?: boolean;
+  /** derived on load: unified drink category */
+  drink: string;
   search: string;
 }
 
@@ -54,6 +56,10 @@ export interface InvoiceLine {
   cost: number;
   unitPrice: number;
   vat: number;
+  /** line discount in % */
+  discount?: number;
+  /** manual line total (excl. btw); overrides qty × price */
+  amount?: number;
 }
 
 export interface Invoice {
@@ -65,6 +71,20 @@ export interface Invoice {
   status: 'concept' | 'verzonden' | 'betaald';
   lines: InvoiceLine[];
   notes: string;
+  reference?: string;
+  deliveryAddress?: string;
+  discountPct?: number;
+  discountAmount?: number;
+  shipping?: number;
+  /** btw verlegd (reverse charge) -- legacy flag, see vatMode */
+  vatShifted?: boolean;
+  /** standard = normal btw per line, shifted = 0% verlegd, none = invoice without any btw */
+  vatMode?: 'standard' | 'shifted' | 'none';
+  vatNote?: string;
+  /** sender details for this invoice only (company name etc.); falls back to the settings */
+  sender?: Partial<Pick<Settings, 'company' | 'address' | 'postalCity' | 'vatNumber' | 'kvk' | 'iban' | 'email' | 'phone'>>;
+  /** totals typed in by hand instead of calculated */
+  manual?: { net: number; vat: number; gross: number } | null;
 }
 
 export interface Settings {

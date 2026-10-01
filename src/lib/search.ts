@@ -56,7 +56,33 @@ export function searchProducts(products: Product[], raw: string, supplierIds?: S
 
   let found = run(q.tokens.length);
   if (!found.length && q.tokens.length >= 3) found = run(q.tokens.length - 1); // tolerate one wrong word
+
+  // Same EAN = same product, even when a supplier names it differently
+  const eans = new Set(found.map((p) => p.ean).filter(Boolean));
+  if (eans.size) {
+    const have = new Set(found.map((p) => p.id));
+    for (const p of products) {
+      if (p.ean && eans.has(p.ean) && !have.has(p.id) && (!supplierIds || supplierIds.has(p.supplierId))) found.push(p);
+    }
+  }
   return found.map((p) => ({ product: p, perLitre: p.volume ? p.priceBottle / p.volume : undefined }));
+}
+
+/** Loose candidates for the AI: any shared word counts, best overlap first. */
+export function broadCandidates(products: Product[], raw: string, max = 80): Product[] {
+  const q = parseQuery(raw);
+  const toks = q.tokens.filter((t) => t.length >= 2);
+  if (!toks.length) return [];
+  const scored: { p: Product; n: number }[] = [];
+  for (const p of products) {
+    if (q.volume != null && p.volume != null && Math.abs(p.volume - q.volume) > 0.006) continue;
+    const hay = ' ' + p.search;
+    let n = 0;
+    for (const t of toks) if (hay.includes(' ' + t) || (t.length >= 4 && hay.includes(t))) n++;
+    if (n > 0 && (n >= 2 || toks.length === 1)) scored.push({ p, n });
+  }
+  scored.sort((a, b) => b.n - a.n || a.p.priceBottle - b.p.priceBottle);
+  return scored.slice(0, max).map((x) => x.p);
 }
 
 export type SortBy = 'bottle' | 'litre' | 'name';

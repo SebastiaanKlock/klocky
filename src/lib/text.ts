@@ -1,11 +1,19 @@
+const NOISE = new Set(['gb', 'giftbox', 'gift', 'geschenkbox', 'geschenkverpackung', 'geschenkpackung', 'box', 'tin', 'the', 'der', 'die', 'das', 'de', 'het', 'and', 'und', 'en', 'old']);
+
+/** Lowercase, strip accents/punctuation and level out wording differences ("12 Years Old" = "12Y" = "12 Jahre"). */
 export function normText(s: unknown): string {
-  return String(s ?? '')
+  const base = String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/['’`´]/g, '')
+    .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(\d{1,2}) ?(?:years?|yrs?|yo|jahre|jahren|jahr|jaar|ans|y)\b/g, '$1y')
+    .replace(/\bwhiskey\b/g, 'whisky')
+    .replace(/\bsingle malt\b/g, 'singlemalt')
     .trim();
+  return base.split(' ').filter((w) => w && !NOISE.has(w)).join(' ');
 }
 
 export function normHeader(s: unknown): string {

@@ -25,7 +25,7 @@ export function cleanEan(v: unknown): string {
 }
 
 export interface ParseResult {
-  products: Omit<Product, 'supplierId'>[];
+  products: Omit<Product, 'supplierId' | 'drink'>[];
   skipped: number;
 }
 

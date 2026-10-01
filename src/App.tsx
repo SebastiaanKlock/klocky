@@ -3,6 +3,7 @@ import { useData } from './ctx';
 import { supabase } from './backend';
 import { onToast } from './lib/toast';
 import Search from './pages/Search';
+import Compare from './pages/Compare';
 import Suppliers from './pages/Suppliers';
 import Products from './pages/Products';
 import Customers from './pages/Customers';
@@ -11,6 +12,7 @@ import SettingsPage from './pages/SettingsPage';
 
 const TABS = [
   ['search', 'Zoeken'],
+  ['compare', 'Vergelijken'],
   ['suppliers', 'Prijslijsten'],
   ['products', 'Producten'],
   ['customers', 'Klanten'],
@@ -65,6 +67,7 @@ export default function App({ userEmail }: { userEmail: string | null }) {
       {error && <div className="banner">Kon de gegevens niet laden: {error}</div>}
       <main key={tab}>
         {tab === 'search' && <Search goTo={setTab} />}
+        {tab === 'compare' && <Compare />}
         {tab === 'suppliers' && <Suppliers />}
         {tab === 'products' && <Products />}
         {tab === 'customers' && <Customers />}

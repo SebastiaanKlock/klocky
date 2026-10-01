@@ -3,6 +3,7 @@ import { useData } from '../ctx';
 import { normText } from '../lib/text';
 import { eur, fmtVol, parseNum, parseAbvFromText, parseVolumeFromText } from '../lib/text';
 import type { Product } from '../types';
+import { DRINK_CATEGORIES } from '../lib/categories';
 
 type SortKey = 'description' | 'volume' | 'supplier' | 'priceBottle' | 'ean' | 'category';
 
@@ -11,6 +12,7 @@ export default function Products() {
   const [filter, setFilter] = useState('');
   const df = useDeferredValue(filter);
   const [supplierId, setSupplierId] = useState<string>('');
+  const [drink, setDrink] = useState('');
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'description', dir: 1 });
   const [page, setPage] = useState(0);
   const [adding, setAdding] = useState(false);
@@ -18,14 +20,14 @@ export default function Products() {
 
   const rows = useMemo(() => {
     const t = normText(df).split(' ').filter(Boolean);
-    let r = products.filter((p) => (supplierId === '' || p.supplierId === supplierId) && t.every((x) => (' ' + p.search).includes(x)));
+    let r = products.filter((p) => (supplierId === '' || p.supplierId === supplierId) && (!drink || p.drink === drink) && t.every((x) => (' ' + p.search).includes(x)));
     const val = (p: Product): string | number => {
       switch (sort.key) {
         case 'supplier': return supplierName(p.supplierId);
         case 'volume': return p.volume ?? 0;
         case 'priceBottle': return p.priceBottle;
         case 'ean': return p.ean;
-        case 'category': return p.category;
+        case 'category': return p.drink;
         default: return p.description;
       }
     };
@@ -35,7 +37,7 @@ export default function Products() {
       return c * sort.dir || a.description.localeCompare(b.description, 'nl');
     });
     return r;
-  }, [products, df, supplierId, sort, supplierName]);
+  }, [products, df, supplierId, drink, sort, supplierName]);
 
   const th = (key: SortKey, label: string, cls = '') => (
     <th className={'sortable ' + cls} onClick={() => { setSort((s) => ({ key, dir: s.key === key ? (-s.dir as 1 | -1) : 1 })); setPage(0); }}>
@@ -53,6 +55,10 @@ export default function Products() {
         <select value={supplierId} onChange={(e) => { setSupplierId(e.target.value); setPage(0); }}>
           <option value="">Alle leveranciers</option>
           {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+        <select value={drink} onChange={(e) => { setDrink(e.target.value); setPage(0); }}>
+          <option value="">Alle categorieën</option>
+          {DRINK_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <span className="muted">{rows.length.toLocaleString('nl-NL')} producten</span>
         <button onClick={() => setAdding(true)} disabled={!suppliers.length}>+ Product handmatig toevoegen</button>
@@ -73,7 +79,7 @@ export default function Products() {
               <td className="r"><b>{eur(p.priceBottle, p.currency)}</b></td>
               <td className="r">{eur(p.priceCase, p.currency)}</td>
               <td className="small">{p.ean}</td>
-              <td className="small">{p.category}</td>
+              <td className="small">{p.drink}{p.category && p.category.toLowerCase() !== p.drink.toLowerCase() ? <div className="muted">{p.category}</div> : null}</td>
               <td>{p.manual && <button className="danger small" onClick={() => store.deleteProduct(p)}>×</button>}</td>
             </tr>
           ))}
